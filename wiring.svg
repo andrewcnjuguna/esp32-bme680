@@ -22,8 +22,8 @@
   <!-- ESP32 pins -->
   <text x="120" y="240" class="label">3V3</text>
   <text x="120" y="320" class="label">GND</text>
-  <text x="120" y="400" class="label">GPIO21 (SDA) — ESP32‑C3</text>
-  <text x="120" y="480" class="label">GPIO22 (SCL) — ESP32‑C3</text>
+  <text x="120" y="400" class="label">GPIO21 (SDA) — ESP32S Dev kit C V4</text>
+  <text x="120" y="480" class="label">GPIO22 (SCL) — ESP32S Dev kit C V4</text>
 
   <!-- OLED pins -->
   <text x="900" y="240" class="label">VCC</text>
