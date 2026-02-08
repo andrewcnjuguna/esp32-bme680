@@ -9,6 +9,8 @@ ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and PO
 ## Wiring (I²C)
 Both the OLED and BME680 share the I²C bus.
 
+![Wiring diagram](wiring.svg)
+
 | Signal | ESP32 pin | Notes |
 |---|---|---|
 | SDA | GPIO 21 | I²C data |
