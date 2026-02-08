@@ -22,6 +22,11 @@ Both the OLED and BME680 share the I²C bus.
 
 **BME680:** uses `BME68X_I2C_ADDR_HIGH` in the sketch
 
+### Board pinout reference
+ESP32 DevKitC V4 pinout reference (GPIO21=SDA, GPIO22=SCL commonly used for I²C):
+- https://randomnerdtutorials.com/esp32-pinout-reference-gpios/
+- https://components101.com/microcontrollers/esp32-devkitc
+
 ## ESP32 sketch config (placeholders)
 Update these in `ESP32_BME680_1.ino`:
 ```cpp
