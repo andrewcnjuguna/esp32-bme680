@@ -13,8 +13,8 @@ Both the OLED and BME680 share the I²C bus.
 
 | Signal | ESP32 pin | Notes |
 |---|---|---|
-| SDA | GPIO 21 | I²C data |
-| SCL | GPIO 22 | I²C clock |
+| SDA | GPIO 21 (ESP32‑C3) | I²C data (as wired in your build) |
+| SCL | GPIO 22 (ESP32‑C3) | I²C clock (as wired in your build) |
 | 3V3 | 3.3V | Power for BME680 + OLED (check your OLED voltage) |
 | GND | GND | Common ground |
 
