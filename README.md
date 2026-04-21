@@ -1,66 +1,181 @@
 # ESP32 BME680 IAQ + OLED + RPi server
 
-ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and POSTs sensor data to a Raspberry Pi server. The RPi serves a webpage with the live values.
+ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and POSTs sensor data to a Raspberry Pi server. The RPi serves a webpage with the live values. Between readings the ESP32 enters **deep sleep** to save power.
 
-## What’s in this repo
-- `ESP32_BME680_1.ino` – ESP32 sketch
-- `pi_server` – notes/commands for the old RPi server + service
+## What's in this repo
+- `ESP32_BME680.ino` – ESP32 sketch
+- `pi_server` – notes/commands for the RPi server setup & service
+- `ESP32_BME680.kicad_sch` – KiCad schematic
+- `wiring.svg` – wiring diagram
+
+## Libraries required
+
+Install all of these via the Arduino Library Manager or manually:
+
+| Library | Purpose |
+|---|---|
+| [BSEC Software Library](https://github.com/boschsensortec/BSEC-Arduino-library) | Bosch BSEC algorithm (IAQ, CO₂, VOC) |
+| Adafruit GFX Library | Graphics primitives |
+| Adafruit SH110X | SH1106 OLED driver |
+
+The following are part of the **ESP32 Arduino core** (no separate install needed): `WiFi`, `Wire`, `HTTPClient`, `ArduinoOTA`, `Preferences`, `time`.
+
+> **BSEC note:** The BSEC library includes a pre-compiled binary. Follow the [Bosch BSEC integration guide](https://github.com/boschsensortec/BSEC-Arduino-library) to configure the build flags correctly in `platform.txt`.
 
 ## Wiring (I²C)
+
 Both the OLED and BME680 share the I²C bus.
 
 ![Wiring diagram](wiring.svg)
 
 | Signal | ESP32 pin | Notes |
 |---|---|---|
-| SDA | GPIO 21 (ESP32S Dev kit C V4 NodeMCU) | I²C data (as wired in your build) |
-| SCL | GPIO 22 (ESP32S Dev kit C V4 NodeMCU) | I²C clock (as wired in your build) |
+| SDA | GPIO 21 | I²C data |
+| SCL | GPIO 22 | I²C clock |
 | 3V3 | 3.3V | Power for BME680 + OLED (check your OLED voltage) |
 | GND | GND | Common ground |
 
-**OLED:** SH1106 @ `0x3C` (default)
+**OLED:** SH1106 128×64 @ `0x3C` (default), driven by `Adafruit_SH1106G`
 
-**BME680:** uses `BME68X_I2C_ADDR_HIGH` in the sketch
+**BME680:** `BME68X_I2C_ADDR_HIGH` (`0x77`) — change to `BME68X_I2C_ADDR_LOW` (`0x76`) if your module's SDO pin is pulled low.
 
 ### Board pinout reference
-ESP32 DevKitC V4 pinout reference (GPIO21=SDA, GPIO22=SCL commonly used for I²C):
 - https://randomnerdtutorials.com/esp32-pinout-reference-gpios/
 - https://components101.com/microcontrollers/esp32-devkitc
 
-## ESP32 sketch config (placeholders)
-Update these in `ESP32_BME680_1.ino`:
+## Configuration
+
+Edit these constants near the top of `ESP32_BME680.ino`:
+
 ```cpp
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+// Credentials / server
+const char* ssid       = "YOUR_WIFI_SSID";
+const char* password   = "YOUR_WIFI_PASSWORD";
 const char* serverName = "http://<rpi-ip>:3000/sensor-data";
 ```
 
-## RPi server notes
-The ESP32 posts JSON to the RPi at `/sensor-data` on port 3000. The old RPi serves the page that shows the values.
+```cpp
+// Timing
+#define SLEEP_DURATION_S   30     // seconds between readings
+#define OTA_WINDOW_BOOT_MS 20000  // OTA window on first/power-on boot (ms)
+#define OTA_WINDOW_WAKE_MS 4000   // OTA window on each deep-sleep wake (ms)
+#define BSEC_READ_TIMEOUT  12000  // max ms to wait for a BSEC reading
+#define WIFI_TIMEOUT_MS    15000  // max ms to wait for WiFi connection
+```
 
-The `pi_server` file includes:
-- stopping Apache/nginx
-- starting/restarting the `ESP32_IAQ.service`
-- iptables rule to redirect port 80 → 3000
-- verification commands
+**Timezone:** The sketch defaults to CET/CEST (Central European Time). Update the `TZ` string in `setup()` for your region — see the [POSIX TZ format list](https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv).
 
-### ChatGPT setup link
-Used to set up the service on the RPi:
-https://chatgpt.com/share/6988bd14-832c-8006-978f-0f99e196c184
+## Boot flow & deep sleep
 
-## JSON payload sent
+The device uses deep sleep between readings. On every wake the sketch runs `setup()` from the beginning; `loop()` is never reached.
+
+```
+Power-on / timer wake
+        │
+        ├─ Connect WiFi
+        │
+        ├─ Sync NTP time (CET/CEST)
+        │
+        ├─ OTA window
+        │     • first boot  → 20 s   (time to push a firmware update)
+        │     • timer wake  →  4 s
+        │
+        ├─ Init BSEC, restore saved calibration state (NVS)
+        │
+        ├─ Poll BSEC until valid reading (up to 12 s)
+        │
+        ├─ Save BSEC calibration state to NVS
+        │
+        ├─ POST JSON to RPi server
+        │
+        ├─ Update OLED display
+        │
+        └─ Deep sleep for 30 s  ──► repeat
+```
+
+**BSEC state persistence:** Calibration data is saved to ESP32 NVS (non-volatile storage) via `Preferences` after each successful reading and restored on the next wake. This means the IAQ accuracy improves faster after a power cycle — accuracy level 3 (fully calibrated) is reached sooner.
+
+## OTA updates
+
+The sketch registers as `esp32-bme680` on the local network via ArduinoOTA. To push a firmware update:
+
+1. Open the sketch in Arduino IDE.
+2. Power-cycle (or let the device wake from sleep) — the OTA window opens for up to 20 s on first boot or 4 s on a sleep wake.
+3. Select the **esp32-bme680** port from **Tools → Port** and upload normally.
+
+## JSON payload sent to RPi
+
 ```json
 {
-  "temperature": <float>,
-  "humidity": <float>,
-  "pressure": <float>,
-  "IAQ": <float>,
-  "carbon": <float>,
-  "VOC": <float>,
-  "IAQsts": "<string>"
+  "temperature": <float>,   // °C (heat-compensated by BSEC)
+  "humidity":    <float>,   // % RH (heat-compensated by BSEC)
+  "pressure":    <float>,   // hPa
+  "IAQ":         <float>,   // static IAQ index (0–500)
+  "carbon":      <float>,   // estimated CO₂ equivalent (ppm)
+  "VOC":         <float>,   // breath VOC equivalent (ppm)
+  "IAQsts":      "<string>" // human-readable air quality label
 }
 ```
 
+### IAQ index scale
+
+| IAQ range | Label |
+|---|---|
+| 0 – 50 | Excellent |
+| 51 – 100 | Good |
+| 101 – 150 | Lightly polluted |
+| 151 – 200 | Moderately polluted |
+| 201 – 250 | Heavily polluted |
+| 251 – 350 | Severely polluted |
+| > 350 | Extremely polluted |
+
+### IAQ accuracy levels
+
+The BSEC `iaqAccuracy` field (shown on the OLED as `Acc:`) indicates calibration status:
+
+| Value | Meaning |
+|---|---|
+| 0 | Stabilisation / insufficient data |
+| 1 | Low accuracy — sensor still calibrating |
+| 2 | Medium accuracy |
+| 3 | High accuracy — fully calibrated |
+
+Accuracy reaches 3 after the sensor has been running for a while in varying air conditions. The saved NVS state helps this persist across reboots.
+
+## RPi server setup
+
+The ESP32 POSTs JSON to the RPi at `/sensor-data` on port 3000. The `pi_server` file contains the commands used to set up the service, with key steps summarised below.
+
+### Systemd service
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ESP32_IAQ.service
+sudo systemctl status ESP32_IAQ.service
+```
+
+### Port redirect (80 → 3000)
+
+```bash
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 3000
+sudo iptables -t nat -L   # verify rule is in place
+```
+
+### Verify Node.js is listening
+
+```bash
+sudo netstat -tulpn | grep LISTEN   # should show node on :3000
+```
+
+### Disable conflicting web servers
+
+```bash
+sudo systemctl stop apache2 && sudo systemctl disable apache2
+sudo systemctl stop nginx
+```
+
 ## Notes
-- Display is SH1106 128x64 via `Adafruit_SH110X`.
-- Time sync uses `pool.ntp.org` with CET/CEST TZ config.
+
+- The OLED displays date/time, temperature, humidity, pressure, IAQ, CO₂, VOC, air quality label, accuracy level, and a sleep countdown.
+- Time is shown only after NTP sync succeeds (`now > 24 * 3600`); until then it shows "Syncing time...".
+- If BSEC reports a fatal error, the built-in LED blinks rapidly and the sketch halts.
