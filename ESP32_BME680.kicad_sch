@@ -266,13 +266,13 @@
 
   ; ── Power symbols ──────────────────────────────────────────────────────────
 
-  ; +3V3 on ESP32 3V3 pin
-  (symbol (lib_id "power:+3V3") (at 91.44 96.52 0) (unit 1)
+  ; +3V3 on ESP32 3V3 pin — placed directly at pin tip (91.44, 111.76)
+  (symbol (lib_id "power:+3V3") (at 91.44 111.76 0) (unit 1)
     (in_bom yes) (on_board yes)
-    (property "Reference" "#PWR01" (at 91.44 100.076 0)
+    (property "Reference" "#PWR01" (at 91.44 115.316 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Value" "+3V3" (at 91.44 93.98 0)
+    (property "Value" "+3V3" (at 91.44 109.22 0)
       (effects (font (size 1.27 1.27)))
     )
     (pin "1" (uuid "pwr-3v3-esp32"))
@@ -352,73 +352,43 @@
 
   ; ── Net labels (I2C bus) ──────────────────────────────────────────────────
 
-  ; SDA label on ESP32 GPIO21 pin  (label anchor = pin connection point)
-  (label (at 91.44 101.6 0) (fields_autoplaced)
+  ; SDA label on ESP32 GPIO21 pin — fixed: text must be first; Y corrected to 106.68
+  (label "SDA" (at 91.44 106.68 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-sda-esp32")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SDA"
   )
 
   ; SDA label on BME680 SDA pin
-  (label (at 167.64 91.44 180) (fields_autoplaced)
+  (label "SDA" (at 167.64 91.44 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-sda-bme680")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SDA"
   )
 
   ; SDA label on SH1106 SDA pin
-  (label (at 167.64 132.08 180) (fields_autoplaced)
+  (label "SDA" (at 167.64 132.08 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-sda-sh1106")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SDA"
   )
 
-  ; SCL label on ESP32 GPIO22 pin
-  (label (at 91.44 106.68 0) (fields_autoplaced)
+  ; SCL label on ESP32 GPIO22 pin — fixed: text must be first; Y corrected to 101.6
+  (label "SCL" (at 91.44 101.6 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-scl-esp32")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SCL"
   )
 
   ; SCL label on BME680 SCL pin
-  (label (at 167.64 88.9 180) (fields_autoplaced)
+  (label "SCL" (at 167.64 88.9 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-scl-bme680")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SCL"
   )
 
   ; SCL label on SH1106 SCL pin
-  (label (at 167.64 129.54 180) (fields_autoplaced)
+  (label "SCL" (at 167.64 129.54 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "lbl-scl-sh1106")
-    (property "Intersheet References" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    "SCL"
   )
 
-  ; ── Short wires (pin → label / power symbol) ──────────────────────────────
-
-  ; ESP32 3V3 pin → +3V3 power symbol
-  (wire (pts (xy 91.44 96.52) (xy 91.44 99.06))
-    (stroke (width 0) (type default))
-    (uuid "wire-esp32-3v3")
-  )
+  ; ── Wires ─────────────────────────────────────────────────────────────────
 
   ; ESP32 GND pin → GND power symbol
   (wire (pts (xy 60.96 111.76) (xy 60.96 96.52))
@@ -426,34 +396,10 @@
     (uuid "wire-esp32-gnd")
   )
 
-  ; BME680 VDD → +3V3
-  (wire (pts (xy 167.64 93.98) (xy 167.64 93.98))
-    (stroke (width 0) (type default))
-    (uuid "wire-bme680-vdd")
-  )
-
   ; BME680 SDO → +3V3  (ties SDO high)
   (wire (pts (xy 188.0 88.9) (xy 193.04 88.9))
     (stroke (width 0) (type default))
     (uuid "wire-bme680-sdo")
-  )
-
-  ; BME680 GND → GND
-  (wire (pts (xy 167.64 83.82) (xy 167.64 83.82))
-    (stroke (width 0) (type default))
-    (uuid "wire-bme680-gnd")
-  )
-
-  ; SH1106 VCC → +3V3
-  (wire (pts (xy 167.64 134.62) (xy 167.64 134.62))
-    (stroke (width 0) (type default))
-    (uuid "wire-sh1106-vcc")
-  )
-
-  ; SH1106 GND → GND
-  (wire (pts (xy 167.64 124.46) (xy 167.64 124.46))
-    (stroke (width 0) (type default))
-    (uuid "wire-sh1106-gnd")
   )
 
   ; ── Annotations / notes ───────────────────────────────────────────────────
