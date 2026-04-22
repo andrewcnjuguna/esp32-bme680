@@ -82,7 +82,7 @@
           (fill (type background))
         )
         (text "ESP32\nDevKitC V4" (at 0 0 0)
-          (effects (font (size 1.524 1.524) bold) (justify center))
+          (effects (font (size 1.524 1.524) bold) )
         )
       )
       (symbol "ESP32_DevKitC_1_1"
@@ -120,7 +120,7 @@
           (fill (type background))
         )
         (text "BME680" (at 0 0 0)
-          (effects (font (size 1.524 1.524) bold) (justify center))
+          (effects (font (size 1.524 1.524) bold) )
         )
       )
       (symbol "BME680_1_1"
@@ -162,7 +162,7 @@
           (fill (type background))
         )
         (text "SH1106\nOLED 128x64" (at 0 0 0)
-          (effects (font (size 1.27 1.27) bold) (justify center))
+          (effects (font (size 1.27 1.27) bold) )
         )
       )
       (symbol "SH1106_OLED_1_1"
