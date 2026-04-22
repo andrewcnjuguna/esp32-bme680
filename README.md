@@ -5,7 +5,6 @@ ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and PO
 ## What's in this repo
 - `ESP32_BME680.ino` – ESP32 sketch
 - `pi_server` – notes/commands for the RPi server setup & service
-- `ESP32_BME680.kicad_sch` – KiCad schematic
 - `wiring.svg` – wiring diagram
 
 ## Libraries required
