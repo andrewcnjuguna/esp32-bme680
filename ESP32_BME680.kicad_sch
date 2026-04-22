@@ -14,7 +14,6 @@
 
   (lib_symbols
 
-    ; ── Power: GND ────────────────────────────────────────────────────────────
     (symbol "power:GND" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 -6.35 0)
         (effects (font (size 1.27 1.27)) hide)
@@ -39,7 +38,6 @@
       )
     )
 
-    ; ── Power: +3V3 ───────────────────────────────────────────────────────────
     (symbol "power:+3V3" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 3.556 0)
         (effects (font (size 1.27 1.27)) hide)
@@ -69,8 +67,6 @@
       )
     )
 
-    ; ── ESP32 DevKitC V4 ──────────────────────────────────────────────────────
-    ; Pins shown: GPIO21/SDA, GPIO22/SCL, 3V3 (right); GND (left)
     (symbol "Custom:ESP32_DevKitC" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 -14.224 0)
         (effects (font (size 1.27 1.27)))
@@ -90,7 +86,6 @@
         )
       )
       (symbol "ESP32_DevKitC_1_1"
-        ; Right-side pins (I2C + 3V3) — rotation 0 = pin exits to the right
         (pin bidirectional line (at 15.24 7.62 180) (length 2.54)
           (name "3V3" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
@@ -103,7 +98,6 @@
           (name "GPIO22/SCL" (effects (font (size 1.27 1.27))))
           (number "3" (effects (font (size 1.27 1.27))))
         )
-        ; Left-side pin (GND) — rotation 0 = pin exits to the left
         (pin power_in line (at -15.24 -7.62 0) (length 2.54)
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "4" (effects (font (size 1.27 1.27))))
@@ -111,7 +105,6 @@
       )
     )
 
-    ; ── BME680 ────────────────────────────────────────────────────────────────
     (symbol "Custom:BME680" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 -10.16 0)
         (effects (font (size 1.27 1.27)))
@@ -131,7 +124,6 @@
         )
       )
       (symbol "BME680_1_1"
-        ; Left-side pins — rotation 0 = pin exits to the left
         (pin power_in line (at -10.16 5.08 0) (length 2.54)
           (name "VDD" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
@@ -148,7 +140,6 @@
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "4" (effects (font (size 1.27 1.27))))
         )
-        ; SDO tied to VDD for addr 0x77 — shown on right side
         (pin input line (at 10.16 0 180) (length 2.54)
           (name "SDO/ADDR" (effects (font (size 1.27 1.27))))
           (number "5" (effects (font (size 1.27 1.27))))
@@ -156,7 +147,6 @@
       )
     )
 
-    ; ── SH1106 OLED (128x64 I2C) ─────────────────────────────────────────────
     (symbol "Custom:SH1106_OLED" (pin_names (offset 1.016)) (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 -10.16 0)
         (effects (font (size 1.27 1.27)))
@@ -176,7 +166,6 @@
         )
       )
       (symbol "SH1106_OLED_1_1"
-        ; Left-side pins — rotation 0 = pin exits to the left
         (pin power_in line (at -10.16 5.08 0) (length 2.54)
           (name "VCC" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
@@ -196,11 +185,8 @@
       )
     )
 
-  ) ; end lib_symbols
+  )
 
-  ; ── Component instances ────────────────────────────────────────────────────
-
-  ; U1 — ESP32 DevKitC V4 (center-left)
   (symbol (lib_id "Custom:ESP32_DevKitC") (at 76.2 104.14 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (property "Reference" "U1" (at 76.2 88.9 0)
@@ -215,13 +201,12 @@
     (property "Datasheet" "https://www.espressif.com" (at 76.2 104.14 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid "esp32-pin-1-3v3"))
-    (pin "2" (uuid "esp32-pin-2-sda"))
-    (pin "3" (uuid "esp32-pin-3-scl"))
-    (pin "4" (uuid "esp32-pin-4-gnd"))
+    (pin "1" (uuid "71fb84ad-b2b4-45bd-af5a-ee34cbacd508"))
+    (pin "2" (uuid "6faa69b9-f24e-4a57-a2cb-d9e64b1a48e5"))
+    (pin "3" (uuid "0aacd691-e6bc-4c41-ab9d-21d262e42398"))
+    (pin "4" (uuid "922cd9f6-f3a8-42a6-98a2-403a8d539c71"))
   )
 
-  ; U2 — BME680 sensor (right, upper)
   (symbol (lib_id "Custom:BME680") (at 177.8 88.9 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (property "Reference" "U2" (at 177.8 76.2 0)
@@ -236,14 +221,13 @@
     (property "Datasheet" "https://www.bosch-sensortec.com" (at 177.8 88.9 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid "bme680-pin-1-vdd"))
-    (pin "2" (uuid "bme680-pin-2-sda"))
-    (pin "3" (uuid "bme680-pin-3-scl"))
-    (pin "4" (uuid "bme680-pin-4-gnd"))
-    (pin "5" (uuid "bme680-pin-5-sdo"))
+    (pin "1" (uuid "c6b1a99a-6971-49f8-88fd-a6e9b41f43c4"))
+    (pin "2" (uuid "8f0a764b-570b-4afa-bbc2-ee4fab13e5a5"))
+    (pin "3" (uuid "5bdb7c03-f37e-464a-8207-a3264be59af9"))
+    (pin "4" (uuid "bb50d471-b23a-427a-9c23-39e7e293d050"))
+    (pin "5" (uuid "536acafb-7849-4ea6-bcc6-4aa7449bd12f"))
   )
 
-  ; U3 — SH1106 OLED (right, lower)
   (symbol (lib_id "Custom:SH1106_OLED") (at 177.8 129.54 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (property "Reference" "U3" (at 177.8 116.84 0)
@@ -258,15 +242,12 @@
     (property "Datasheet" "" (at 177.8 129.54 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid "sh1106-pin-1-vcc"))
-    (pin "2" (uuid "sh1106-pin-2-sda"))
-    (pin "3" (uuid "sh1106-pin-3-scl"))
-    (pin "4" (uuid "sh1106-pin-4-gnd"))
+    (pin "1" (uuid "3ccedfc0-5e8d-4b3c-a732-7ebbdaa7b0b9"))
+    (pin "2" (uuid "3129a94a-3cc4-4ba8-9084-e07a1b611746"))
+    (pin "3" (uuid "5f13397d-f4c9-46f9-8f31-68afcd06e7e8"))
+    (pin "4" (uuid "a91b0bca-f62a-4b26-864e-bb14c784cb33"))
   )
 
-  ; ── Power symbols ──────────────────────────────────────────────────────────
-
-  ; +3V3 on ESP32 3V3 pin — placed directly at pin tip (91.44, 111.76)
   (symbol (lib_id "power:+3V3") (at 91.44 111.76 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR01" (at 91.44 115.316 0)
@@ -275,10 +256,9 @@
     (property "Value" "+3V3" (at 91.44 109.22 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-3v3-esp32"))
+    (pin "1" (uuid "744da435-5529-4947-b485-9b3eeb6c1e8b"))
   )
 
-  ; +3V3 on BME680 VDD pin
   (symbol (lib_id "power:+3V3") (at 167.64 93.98 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR02" (at 167.64 97.536 0)
@@ -287,10 +267,9 @@
     (property "Value" "+3V3" (at 167.64 91.44 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-3v3-bme680"))
+    (pin "1" (uuid "de4d0d44-0af4-4dee-8b15-91ab91c55961"))
   )
 
-  ; +3V3 on BME680 SDO pin (ties SDO high → I2C addr 0x77)
   (symbol (lib_id "power:+3V3") (at 193.04 88.9 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR03" (at 193.04 92.456 0)
@@ -299,10 +278,9 @@
     (property "Value" "+3V3" (at 193.04 86.36 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-3v3-sdo"))
+    (pin "1" (uuid "18f4928b-8fcb-4039-9040-05a8ce2a3dfb"))
   )
 
-  ; +3V3 on SH1106 VCC pin
   (symbol (lib_id "power:+3V3") (at 167.64 134.62 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR04" (at 167.64 138.176 0)
@@ -311,10 +289,9 @@
     (property "Value" "+3V3" (at 167.64 132.08 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-3v3-sh1106"))
+    (pin "1" (uuid "83e4c793-d11a-4dd3-bddf-003b43e4a6d3"))
   )
 
-  ; GND on ESP32
   (symbol (lib_id "power:GND") (at 60.96 111.76 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR05" (at 60.96 118.11 0)
@@ -323,10 +300,9 @@
     (property "Value" "GND" (at 60.96 116.84 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-gnd-esp32"))
+    (pin "1" (uuid "2cb89052-d10d-4599-b7ef-afc9cc92b2e8"))
   )
 
-  ; GND on BME680
   (symbol (lib_id "power:GND") (at 167.64 83.82 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR06" (at 167.64 90.17 0)
@@ -335,10 +311,9 @@
     (property "Value" "GND" (at 167.64 88.9 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-gnd-bme680"))
+    (pin "1" (uuid "c3bbf9ef-5113-476b-80f1-5eeeace14d02"))
   )
 
-  ; GND on SH1106
   (symbol (lib_id "power:GND") (at 167.64 124.46 0) (unit 1)
     (in_bom yes) (on_board yes)
     (property "Reference" "#PWR07" (at 167.64 130.81 0)
@@ -347,62 +322,48 @@
     (property "Value" "GND" (at 167.64 129.54 0)
       (effects (font (size 1.27 1.27)))
     )
-    (pin "1" (uuid "pwr-gnd-sh1106"))
+    (pin "1" (uuid "505b80bf-7c2f-46d7-bfd3-59b6b0dc94ce"))
   )
 
-  ; ── Net labels (I2C bus) ──────────────────────────────────────────────────
-
-  ; SDA label on ESP32 GPIO21 pin — fixed: text must be first; Y corrected to 106.68
   (label "SDA" (at 91.44 106.68 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-sda-esp32")
+    (uuid "18158eba-6158-4d43-92ea-ac759116c5c7")
   )
 
-  ; SDA label on BME680 SDA pin
   (label "SDA" (at 167.64 91.44 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-sda-bme680")
+    (uuid "46cb6420-18df-47b4-b3f7-58b352dda1b7")
   )
 
-  ; SDA label on SH1106 SDA pin
   (label "SDA" (at 167.64 132.08 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-sda-sh1106")
+    (uuid "69415c2d-48ca-4d2b-8c4c-ffcb5bcda2f9")
   )
 
-  ; SCL label on ESP32 GPIO22 pin — fixed: text must be first; Y corrected to 101.6
   (label "SCL" (at 91.44 101.6 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-scl-esp32")
+    (uuid "f1a2b3c4-d5e6-7890-abcd-ef0123456789")
   )
 
-  ; SCL label on BME680 SCL pin
   (label "SCL" (at 167.64 88.9 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-scl-bme680")
+    (uuid "f2a3b4c5-d6e7-8901-bcde-f01234567890")
   )
 
-  ; SCL label on SH1106 SCL pin
   (label "SCL" (at 167.64 129.54 180)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "lbl-scl-sh1106")
+    (uuid "f3a4b5c6-d7e8-9012-cdef-012345678901")
   )
 
-  ; ── Wires ─────────────────────────────────────────────────────────────────
-
-  ; ESP32 GND pin → GND power symbol
   (wire (pts (xy 60.96 111.76) (xy 60.96 96.52))
     (stroke (width 0) (type default))
-    (uuid "wire-esp32-gnd")
+    (uuid "5af438d3-a7a6-426e-9b34-d64af12d489d")
   )
 
-  ; BME680 SDO → +3V3  (ties SDO high)
   (wire (pts (xy 188.0 88.9) (xy 193.04 88.9))
     (stroke (width 0) (type default))
-    (uuid "wire-bme680-sdo")
+    (uuid "ea6ee4b0-afc6-402d-936d-4a3b7c288245")
   )
-
-  ; ── Annotations / notes ───────────────────────────────────────────────────
 
   (text "I2C pull-up resistors (4.7kΩ) on SDA and SCL\nto +3V3 recommended if not already on module PCB" (at 60.96 152.4 0)
     (effects (font (size 1.27 1.27)) (justify left))
