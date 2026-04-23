@@ -3,9 +3,66 @@
 ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and POSTs sensor data to a Raspberry Pi server. The RPi serves a webpage with the live values. Between readings the ESP32 enters **deep sleep** to save power.
 
 ## What's in this repo
-- `ESP32_BME680.ino` – ESP32 sketch
+- `ESP32_BME680.ino` – ESP32 sketch (battery / deep-sleep variant)
+- `ESP32_BME680_usb.ino` – ESP32 sketch for always-on USB-powered installations (no deep sleep, EEPROM BSEC state)
 - `pi_server` – notes/commands for the RPi server setup & service
 - `wiring.svg` – wiring diagram
+
+## USB-powered variant (`ESP32_BME680_usb.ino`)
+
+`ESP32_BME680_usb.ino` is intended for an ESP32 that lives in a fixed location (e.g. a living-room USB outlet) and is always powered. Key differences from the deep-sleep sketch:
+
+| Feature | `ESP32_BME680.ino` | `ESP32_BME680_usb.ino` |
+|---|---|---|
+| Power management | Deep sleep between readings | No deep sleep — runs continuously |
+| BSEC state storage | NVS via `Preferences` | EEPROM |
+| BSEC state save trigger | Every successful reading | Every 4 hours when accuracy ≥ 3 |
+| OTA support | Yes | No |
+| Loop interval | One shot per wake | 3 s (BSEC LP sample rate) |
+
+### BSEC state saving (EEPROM)
+
+The sketch saves the BSEC calibration state to EEPROM every **4 hours**, but only when IAQ accuracy has reached level 3 (fully calibrated). On the next reboot the state is restored, so the sensor re-reaches high accuracy much faster than starting from scratch.
+
+```cpp
+#define EEPROM_SIZE (BSEC_MAX_STATE_BLOB_SIZE + 10)
+const unsigned long BSEC_STATE_SAVE_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
+```
+
+### Configuration
+
+Edit these constants near the top of `ESP32_BME680_usb.ino`:
+
+```cpp
+const char* ssid       = "YOUR_WIFI_SSID";
+const char* password   = "YOUR_WIFI_PASSWORD";
+const char* serverName = "http://<rpi-ip>:3000/sensor-data";
+```
+
+```cpp
+// Timezone (default: CET/CEST)
+const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
+```
+
+### Run flow
+
+```
+Power-on / USB connected
+        │
+        ├─ Initialize OLED + EEPROM
+        │
+        ├─ Connect WiFi
+        │
+        ├─ Sync NTP time
+        │
+        ├─ Init BSEC, restore saved calibration state (EEPROM)
+        │
+        └─ Loop every 3 s:
+              ├─ Read BSEC (temperature, humidity, pressure, IAQ, CO₂, VOC)
+              ├─ POST JSON to RPi server
+              ├─ Update OLED display
+              └─ Save BSEC state to EEPROM if accuracy=3 and 4 h elapsed
+```
 
 ## Libraries required
 
@@ -17,7 +74,7 @@ Install all of these via the Arduino Library Manager or manually:
 | Adafruit GFX Library | Graphics primitives |
 | Adafruit SH110X | SH1106 OLED driver |
 
-The following are part of the **ESP32 Arduino core** (no separate install needed): `WiFi`, `Wire`, `HTTPClient`, `ArduinoOTA`, `Preferences`, `time`.
+The following are part of the **ESP32 Arduino core** (no separate install needed): `WiFi`, `Wire`, `HTTPClient`, `ArduinoOTA`, `Preferences`, `EEPROM`, `time`.
 
 > **BSEC note:** The BSEC library includes a pre-compiled binary. Follow the [Bosch BSEC integration guide](https://github.com/boschsensortec/BSEC-Arduino-library) to configure the build flags correctly in `platform.txt`.
 

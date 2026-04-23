@@ -10,10 +10,10 @@
 
 // --- Configuration ---
 // WiFi Credentials
-const char* ssid = "Vodafone-219C"; // Replace with your SSID
-const char* password = "LGmphrheY66m9mkH"; // Replace with your Password
+const char* ssid = "YOUR_WIFI_SSID"; // Replace with your SSID
+const char* password = "YOUR_WIFI_PASSWORD"; // Replace with your Password
 // Server Endpoint
-const char* serverName = "http://192.168.0.105:3000/sensor-data";
+const char* serverName = "http://<rpi-ip>:3000/sensor-data";
 
 // OLED Display Settings
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
