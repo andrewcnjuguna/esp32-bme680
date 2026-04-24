@@ -7,6 +7,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>    // For creating JSON payloads
 #include <EEPROM.h>         // For saving BSEC state
+#include <ArduinoOTA.h>
 
 // --- Configuration ---
 // WiFi Credentials
@@ -27,6 +28,9 @@ const char* serverName = "http://<rpi-ip>:3000/sensor-data";
 
 // LED for error indication (often 2 on ESP32 dev boards)
 #define ERROR_LED_PIN 2 // Or specify your pin, e.g., 2
+
+// OTA hostname for identification in Arduino IDE / network
+#define OTA_HOSTNAME "esp32-bme680-usb"
 
 // BSEC State Saving Configuration
 #define EEPROM_SIZE (BSEC_MAX_STATE_BLOB_SIZE + 10) // +10 for magic number and future use (ensure BSEC_MAX_STATE_BLOB_SIZE is defined by BSEC lib)
@@ -64,6 +68,7 @@ void loadBsecState(void);
 void saveBsecState(void);
 void handleBsecStateSaving(void);
 void connectToWiFi(void);
+void setupOTA(void);
 void initNTP(void);
 void updateNTPTime(void);
 void updateAndLogIAQStatusText(void);
@@ -111,6 +116,11 @@ void setup() {
   
   // Connect to WiFi
   connectToWiFi();
+
+  // Setup OTA (requires WiFi)
+  if (WiFi.status() == WL_CONNECTED) {
+    setupOTA();
+  }
 
   // Initialize NTP
   initNTP();
@@ -181,8 +191,9 @@ void loop() {
     }
   }
 
-  // 3. Keep yielding so the ESP32 WiFi stack doesn't crash
-  yield(); 
+  // 3. Service OTA and yield so the ESP32 WiFi stack doesn't crash
+  ArduinoOTA.handle();
+  yield();
 }
 
 // --- BSEC Functions ---
@@ -330,6 +341,35 @@ void connectToWiFi() {
     // Note: The device will continue to try and operate, but won't send data or sync time.
     // You could implement a more robust retry mechanism or enter a specific mode.
   }
+}
+
+void setupOTA() {
+  ArduinoOTA.setHostname(OTA_HOSTNAME);
+
+  ArduinoOTA.onStart([]() {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("OTA update...");
+    display.display();
+    Serial.println("[OTA] Start");
+  });
+  ArduinoOTA.onEnd([]() {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("OTA done.");
+    display.println("Rebooting...");
+    display.display();
+    Serial.println("[OTA] End");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("[OTA] Progress: %u%%\n", progress * 100 / total);
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.println("[OTA] Error: " + String(error));
+  });
+
+  ArduinoOTA.begin();
+  Serial.println("[OTA] Ready. Hostname: " + String(OTA_HOSTNAME));
 }
 
 void initNTP() {
@@ -493,9 +533,7 @@ void displayDataOnOLED() {
 
   // Line 7: WiFi Status (This is the last line)
   if (WiFi.status() == WL_CONNECTED) {
-    display.print("WiFi:OK RSSI:");
-    display.print(WiFi.RSSI());
-    // display.print("dBm"); // Removed "dBm" to ensure it fits
+    display.print("WiFi:OK OTA:on");
   } else {
     display.print("WiFi: Disconnected");
   }
