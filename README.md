@@ -1,5 +1,7 @@
 # ESP32 BME680 IAQ + OLED + RPi server
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and POSTs sensor data to a Raspberry Pi server. The RPi serves a webpage with the live values. Between readings the ESP32 enters **deep sleep** to save power.
 
 ## What's in this repo
@@ -17,7 +19,8 @@ ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and PO
 | Power management | Deep sleep between readings | No deep sleep — runs continuously |
 | BSEC state storage | NVS via `Preferences` | EEPROM |
 | BSEC state save trigger | Every successful reading | Every 4 hours when accuracy ≥ 3 |
-| OTA support | Yes | No |
+| OTA support | Yes — timed window per wake | Yes — always available |
+| OTA hostname | `esp32-bme680` | `esp32-bme680-usb` |
 | Loop interval | One shot per wake | 3 s (BSEC LP sample rate) |
 
 ### BSEC state saving (EEPROM)
@@ -44,6 +47,19 @@ const char* serverName = "http://<rpi-ip>:3000/sensor-data";
 const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
 ```
 
+```cpp
+// OTA hostname (shown in Arduino IDE Tools → Port)
+#define OTA_HOSTNAME "esp32-bme680-usb"
+```
+
+### OTA updates (USB variant)
+
+Because the USB sketch runs continuously, the OTA service is **always active** — there is no timed window to hit. To push a firmware update:
+
+1. Open the sketch in Arduino IDE.
+2. Select **esp32-bme680-usb** from **Tools → Port** (appears once the device is on the network).
+3. Upload normally. The OLED shows "OTA update..." during the flash and "OTA done. Rebooting..." on completion.
+
 ### Run flow
 
 ```
@@ -53,6 +69,8 @@ Power-on / USB connected
         │
         ├─ Connect WiFi
         │
+        ├─ Start OTA service (hostname: esp32-bme680-usb)
+        │
         ├─ Sync NTP time
         │
         ├─ Init BSEC, restore saved calibration state (EEPROM)
@@ -61,7 +79,8 @@ Power-on / USB connected
               ├─ Read BSEC (temperature, humidity, pressure, IAQ, CO₂, VOC)
               ├─ POST JSON to RPi server
               ├─ Update OLED display
-              └─ Save BSEC state to EEPROM if accuracy=3 and 4 h elapsed
+              ├─ Save BSEC state to EEPROM if accuracy=3 and 4 h elapsed
+              └─ Service OTA (always listening)
 ```
 
 ## Libraries required
@@ -153,11 +172,24 @@ Power-on / timer wake
 
 ## OTA updates
 
-The sketch registers as `esp32-bme680` on the local network via ArduinoOTA. To push a firmware update:
+Both sketches support ArduinoOTA. They use different hostnames so they can coexist on the same network.
+
+### Deep-sleep variant (`esp32-bme680`)
+
+OTA is available only during a short window after each wake:
+
+| Wake type | OTA window |
+|---|---|
+| First / power-on boot | 20 s |
+| Timer wake (deep sleep) | 4 s |
 
 1. Open the sketch in Arduino IDE.
-2. Power-cycle (or let the device wake from sleep) — the OTA window opens for up to 20 s on first boot or 4 s on a sleep wake.
-3. Select the **esp32-bme680** port from **Tools → Port** and upload normally.
+2. Power-cycle (or let the device wake from sleep) — the OTA window opens automatically.
+3. Select **esp32-bme680** from **Tools → Port** and upload normally.
+
+### USB variant (`esp32-bme680-usb`)
+
+OTA is always active (see [USB variant OTA section](#ota-updates-usb-variant) above).
 
 ## JSON payload sent to RPi
 
