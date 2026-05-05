@@ -11,10 +11,10 @@
 
 // --- Configuration ---
 // WiFi Credentials
-const char* ssid = "YOUR_WIFI_SSID"; // Replace with your SSID
-const char* password = "YOUR_WIFI_PASSWORD"; // Replace with your Password
+const char* ssid = "Vodafone-219C"; // Replace with your SSID
+const char* password = "LGmphrheY66m9mkH"; // Replace with your Password
 // Server Endpoint
-const char* serverName = "http://<rpi-ip>:3000/sensor-data";
+const char* serverName = "http://192.168.0.106:3000/sensor-data";
 
 // OLED Display Settings
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -29,8 +29,10 @@ const char* serverName = "http://<rpi-ip>:3000/sensor-data";
 // LED for error indication (often 2 on ESP32 dev boards)
 #define ERROR_LED_PIN 2 // Or specify your pin, e.g., 2
 
+const char* locationID = "Living_Room";
 // OTA hostname for identification in Arduino IDE / network
-#define OTA_HOSTNAME "esp32-bme680-usb"
+
+#define OTA_HOSTNAME "esp32-bme680-livingroom"
 
 // BSEC State Saving Configuration
 #define EEPROM_SIZE (BSEC_MAX_STATE_BLOB_SIZE + 10) // +10 for magic number and future use (ensure BSEC_MAX_STATE_BLOB_SIZE is defined by BSEC lib)
@@ -447,6 +449,7 @@ void sendSensorDataToServer() {
   // Create JSON object - Adjust capacity as needed
   StaticJsonDocument<300> jsonDoc; // Increased capacity for more fields if needed
 
+  jsonDoc["location"] = locationID;
   jsonDoc["temperature"] = float(round(iaqSensor.temperature * 100) / 100.0); // Compensated Temp, 2 decimal places
   jsonDoc["humidity"] = float(round(iaqSensor.humidity * 100) / 100.0);      // Compensated Hum, 2 decimal places
   jsonDoc["pressure"] = float(round(iaqSensor.pressure / 10.0) / 10.0);    // Pressure in hPa, 1 decimal place
@@ -532,8 +535,11 @@ void displayDataOnOLED() {
   display.println(statusToDisplay); // Moves to Line 7
 
   // Line 7: WiFi Status (This is the last line)
+  // Line 7: WiFi Status (This is the last line)
   if (WiFi.status() == WL_CONNECTED) {
-    display.print("WiFi:OK OTA:on");
+    display.print("WiFi:OK RSSI:");
+    display.print(WiFi.RSSI());
+    // display.print("dBm"); // Removed "dBm" to ensure it fits
   } else {
     display.print("WiFi: Disconnected");
   }
