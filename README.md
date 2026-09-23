@@ -20,7 +20,7 @@ ESP32 reads a **BME680** (BSEC library), shows data on a small I²C OLED, and PO
 | BSEC state storage | NVS via `Preferences` | EEPROM |
 | BSEC state save trigger | Every successful reading | Every 4 hours when accuracy ≥ 3 |
 | OTA support | Yes — timed window per wake | Yes — always available |
-| OTA hostname | `esp32-bme680` | `esp32-bme680-usb` |
+| OTA hostname | `esp32-bme680` | `esp32-bme680-livingroom` |
 | Loop interval | One shot per wake | 3 s (BSEC LP sample rate) |
 
 ### BSEC state saving (EEPROM)
@@ -34,13 +34,15 @@ const unsigned long BSEC_STATE_SAVE_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 ### Configuration
 
-Edit these constants near the top of `ESP32_BME680_usb.ino`:
+Copy `ESP32_BME680_usb/secrets.h.example` to `secrets.h` in the same folder and fill it in (`secrets.h` is gitignored):
 
 ```cpp
-const char* ssid       = "YOUR_WIFI_SSID";
-const char* password   = "YOUR_WIFI_PASSWORD";
-const char* serverName = "http://<rpi-ip>:3000/sensor-data";
+#define WIFI_SSID     "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define SERVER_URL    "http://<rpi-ip>:3000/sensor-data"
 ```
+
+Other settings are constants near the top of `ESP32_BME680_usb.ino`:
 
 ```cpp
 // Timezone (default: CET/CEST)
@@ -49,7 +51,7 @@ const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
 
 ```cpp
 // OTA hostname (shown in Arduino IDE Tools → Port)
-#define OTA_HOSTNAME "esp32-bme680-usb"
+#define OTA_HOSTNAME "esp32-bme680-livingroom"
 ```
 
 ### OTA updates (USB variant)
@@ -57,7 +59,7 @@ const char* timeZone = "CET-1CEST,M3.5.0,M10.5.0/3";
 Because the USB sketch runs continuously, the OTA service is **always active** — there is no timed window to hit. To push a firmware update:
 
 1. Open the sketch in Arduino IDE.
-2. Select **esp32-bme680-usb** from **Tools → Port** (appears once the device is on the network).
+2. Select **esp32-bme680-livingroom** from **Tools → Port** (appears once the device is on the network).
 3. Upload normally. The OLED shows "OTA update..." during the flash and "OTA done. Rebooting..." on completion.
 
 ### Run flow
@@ -69,7 +71,7 @@ Power-on / USB connected
         │
         ├─ Connect WiFi
         │
-        ├─ Start OTA service (hostname: esp32-bme680-usb)
+        ├─ Start OTA service (hostname: esp32-bme680-livingroom)
         │
         ├─ Sync NTP time
         │
@@ -187,7 +189,7 @@ OTA is available only during a short window after each wake:
 2. Power-cycle (or let the device wake from sleep) — the OTA window opens automatically.
 3. Select **esp32-bme680** from **Tools → Port** and upload normally.
 
-### USB variant (`esp32-bme680-usb`)
+### USB variant (`esp32-bme680-livingroom`)
 
 OTA is always active (see [USB variant OTA section](#ota-updates-usb-variant) above).
 
