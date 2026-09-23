@@ -31,6 +31,10 @@ const char* serverName = SERVER_URL;
 // LED for error indication (often 2 on ESP32 dev boards)
 #define ERROR_LED_PIN 2 // Or specify your pin, e.g., 2
 
+// MAX4466 microphone. Must be an ADC1 pin (GPIO32-39); ADC2 is unusable while WiFi is on.
+#define MIC_PIN 34
+#define SOUND_SAMPLE_WINDOW_MS 50
+
 const char* locationID = "Living_Room";
 // OTA hostname for identification in Arduino IDE / network
 
@@ -61,6 +65,17 @@ Bsec iaqSensor;
 String bsecLogString; // For serial debugging output from BSEC
 const char* currentIAQStatusText = "Initializing..."; // To store IAQ textual status
 
+// Sound readings, aggregated over each BSEC interval (~3s)
+int currentSoundLevel = 0;       // Average peak-to-peak amplitude (sustained loudness)
+int currentSoundPeak = 0;        // Loudest single 50ms window in the upload interval
+float currentSoundDb = 0;        // 20*log10(avg) — uncalibrated logarithmic level
+unsigned long soundWindowStart = 0;
+int currentSignalMax = 0;
+int currentSignalMin = 4095;
+uint32_t soundSumSinceLastUpload = 0;
+uint16_t soundCountSinceLastUpload = 0;
+int soundPeakSinceLastUpload = 0;
+
 // BSEC state variables
 uint8_t bsecState[BSEC_MAX_STATE_BLOB_SIZE] = {0};
 unsigned long lastBsecStateSaveTime = 0;
@@ -80,6 +95,9 @@ void sendSensorDataToServer(void);
 void displayDataOnOLED(void);
 void printWithLeadingZero(int value);
 String buildBsecDebugString(void);
+int rssiToPercent(long rssi);
+void pollSoundSensor(void);
+void updateSoundLevels(void);
 
 // --- Setup ---
 void setup() {
@@ -89,6 +107,10 @@ void setup() {
 
   pinMode(ERROR_LED_PIN, OUTPUT);
   digitalWrite(ERROR_LED_PIN, LOW); // LED Off
+
+  pinMode(MIC_PIN, INPUT);
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
 
   // Initialize I2C
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -173,9 +195,13 @@ unsigned long lastLoopTime = 0;
 void loop() {
   unsigned long currentTime = millis();
 
+  // 0. Sample the microphone continuously between BSEC readings
+  pollSoundSensor();
+
   // 1. Let BSEC run continuously. It manages its own 3-second timing.
   // It will only return true when a new measurement is ready.
   if (iaqSensor.run()) { 
+    updateSoundLevels();
     bsecLogString = buildBsecDebugString();
     Serial.println(bsecLogString);
 
@@ -211,6 +237,7 @@ String buildBsecDebugString() {
   log += ", Temp:" + String(iaqSensor.temperature) + "C"; // Compensated Temp
   log += ", Hum:" + String(iaqSensor.humidity) + "%";    // Compensated Hum
   log += ", Pres:" + String(iaqSensor.pressure / 100.0) + "hPa";
+  log += ", Snd:" + String(currentSoundLevel) + " peak:" + String(currentSoundPeak) + " dB:" + String(currentSoundDb, 1);
   // log += ", rGas:" + String(iaqSensor.gasResistance) + "Ohm"; // Raw gas resistance
   // log += ", Stab:" + String(iaqSensor.stabStatus);
   // log += ", RunIn:" + String(iaqSensor.runInStatus);
@@ -309,6 +336,13 @@ void handleBsecStateSaving(void) {
 }
 
 // --- WiFi and NTP ---
+// Convert WiFi RSSI (dBm) to an approximate 0-100% quality.
+int rssiToPercent(long rssi) {
+  if (rssi <= -100) return 0;
+  if (rssi >= -50)  return 100;
+  return 2 * (int)(rssi + 100);
+}
+
 void connectToWiFi() {
   Serial.print("[INFO] Connecting to WiFi: ");
   Serial.println(ssid);
@@ -449,7 +483,7 @@ void sendSensorDataToServer() {
   http.addHeader("Content-Type", "application/json");
 
   // Create JSON object - Adjust capacity as needed
-  StaticJsonDocument<300> jsonDoc; // Increased capacity for more fields if needed
+  StaticJsonDocument<512> jsonDoc; // Increased capacity for more fields if needed
 
   jsonDoc["location"] = locationID;
   jsonDoc["temperature"] = float(round(iaqSensor.temperature * 100) / 100.0); // Compensated Temp, 2 decimal places
@@ -461,6 +495,12 @@ void sendSensorDataToServer() {
   jsonDoc["carbon"] = iaqSensor.co2Equivalent > 0 ? iaqSensor.co2Equivalent : 0;   // CO2 equivalent
   jsonDoc["VOC"] = iaqSensor.breathVocEquivalent > 0 ? iaqSensor.breathVocEquivalent : 0; // VOC equivalent
   jsonDoc["IAQsts"] = currentIAQStatusText;
+  jsonDoc["sound"] = currentSoundLevel;
+  jsonDoc["soundPeak"] = currentSoundPeak;
+  jsonDoc["soundDb"] = float(round(currentSoundDb * 10) / 10.0);
+  long rssi = WiFi.RSSI();
+  jsonDoc["rssi"] = rssi;
+  jsonDoc["wifiPercent"] = rssiToPercent(rssi);
   // jsonDoc["rawGas"] = iaqSensor.gasResistance; // Optional
 
   String jsonData;
@@ -555,4 +595,44 @@ void printWithLeadingZero(int value) {
     display.print('0');
   }
   display.print(value);
+}
+
+// --- Sound (MAX4466) ---
+// Track min/max over 50ms windows; the peak-to-peak span is the loudness.
+void pollSoundSensor(void) {
+  int sample = analogRead(MIC_PIN);
+
+  if (sample < 4095) {
+    if (sample > currentSignalMax) currentSignalMax = sample;
+    if (sample < currentSignalMin) currentSignalMin = sample;
+  }
+
+  if (millis() - soundWindowStart >= SOUND_SAMPLE_WINDOW_MS) {
+    int peakToPeak = currentSignalMax - currentSignalMin;
+    if (peakToPeak < 0) peakToPeak = 0;
+
+    soundSumSinceLastUpload += (uint32_t)peakToPeak;
+    soundCountSinceLastUpload++;
+    if (peakToPeak > soundPeakSinceLastUpload) {
+      soundPeakSinceLastUpload = peakToPeak;
+    }
+
+    currentSignalMax = 0;
+    currentSignalMin = 4095;
+    soundWindowStart = millis();
+  }
+}
+
+// Fold the 50ms windows collected since the last BSEC reading into avg/peak/dB.
+void updateSoundLevels(void) {
+  if (soundCountSinceLastUpload > 0) {
+    currentSoundLevel = soundSumSinceLastUpload / soundCountSinceLastUpload;
+  } else {
+    currentSoundLevel = 0;
+  }
+  currentSoundPeak = soundPeakSinceLastUpload;
+  currentSoundDb = currentSoundLevel > 0 ? 20.0f * log10f((float)currentSoundLevel) : 0.0f;
+  soundSumSinceLastUpload = 0;
+  soundCountSinceLastUpload = 0;
+  soundPeakSinceLastUpload = 0;
 }
