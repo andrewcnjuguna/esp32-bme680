@@ -10,10 +10,12 @@
 #include <ArduinoOTA.h>
 
 // --- Configuration ---
-// WiFi Credentials
-const char* ssid       = "YOUR_WIFI_SSID";
-const char* password   = "YOUR_WIFI_PASSWORD";
-const char* serverName = "http://<rpi-ip>:3000/sensor-data";
+// WiFi credentials and server URL live in secrets.h (gitignored).
+// Copy secrets.h.example to secrets.h and fill it in.
+#include "secrets.h"
+const char* ssid       = WIFI_SSID;
+const char* password   = WIFI_PASSWORD;
+const char* serverName = SERVER_URL;
 
 
 // OLED Display Settings
